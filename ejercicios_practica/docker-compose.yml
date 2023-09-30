@@ -1,0 +1,63 @@
+version: "3.3"
+# Este es un archivo de docker-compose.yml para configurar el uso de contenedores de software.
+
+services:
+  db:
+    # Este servicio crea una base de datos de tipo Postgres.
+    image: postgres:13.2
+    container_name: marvel_database
+    restart: always
+    volumes:
+      # Aquí se enlaza el contenido de dentro del contenedor con el directorio en nuestra PC
+      # de esa manera lo que guardemos en la base de datos va a quedar accesible en nuestra carpeta.
+      - ./database:/var/lib/postgresql/data
+    environment:
+      # Postgres nos exige que establezcamos un usuario por defecto, esto se hace por medio
+      # de variables de entorno. Según el hub de Postgres:
+      POSTGRES_DB: marvel_db
+      POSTGRES_USER: inove_user
+      POSTGRES_PASSWORD: 123Marvel!
+
+    ports:
+      # Enlazamos el puerto en el que trabaja Postgres, por defecto el 5432
+      - 5432:5432
+
+  adminer:
+    # Una interfaz para monitoreo y gestión de nuestra base de datos.
+    # Se puede acceder a ella en localhost:8080
+    container_name: marvel_adminer
+    image: adminer:4.8.0
+    restart: always
+    ports:
+      - 8080:8080
+    # depends_on indica que este servicio depende de que primero inicie "db"
+    depends_on: ["db"]
+
+  modulo_4:
+    # build es el lugar desde donde toma los archivos para generar la imagen.
+    # Toma como contexto de trabajo el directorio donde está el docker-compose.yml (.)
+    # y busca el archivo "dockerfile".
+    build:
+      context: .
+      dockerfile: dockerfile
+    # Imágen a utilizar:
+    image: modulo_4
+    # Nombre del container:
+    container_name: modulo_4b_tp
+    # Comportamiento ante fallos y al iniciar el sistema:
+    restart: always
+    # Carpetas enlazadas:
+    volumes:
+      # Source code directory:
+      - type: bind
+        source: .
+        target: /opt/back_end
+    # Puertos enlazados:
+    ports:
+        - "8000:8000"
+    # Control de consola:
+    stdin_open: true
+    tty: true
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      - db
