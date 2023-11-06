@@ -43,7 +43,7 @@ services:
     # Imágen a utilizar:
     image: modulo_4
     # Nombre del container:
-    container_name: modulo_4b
+    container_name: modulo_4c
     # Comportamiento ante fallos y al iniciar el sistema:
     restart: always
     # Carpetas enlazadas:
@@ -55,6 +55,9 @@ services:
     # Puertos enlazados:
     ports:
         - "8000:8000"
+    # Variables de entorno
+    environment:
+      DB_ENGINE: POSTGRES
     # Control de consola:
     stdin_open: true
     tty: true

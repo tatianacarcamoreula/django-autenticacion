@@ -49,14 +49,15 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
-    path('e-commerce/',include('e_commerce.api.urls')),
+    path('e-commerce/',include('e_commerce.urls')),
+    path('e-commerce/api/', include('e_commerce.api.urls')),
     path(
-        'api-docs/swagger',
+        'api-docs/swagger/',
         schema_view.with_ui('swagger', cache_timeout=0),
         name='schema-swagger-ui'
     ),
     path(
-        'api-docs/redoc',
+        'api-docs/redoc/',
         schema_view.with_ui('redoc', cache_timeout=0),
         name='schema-redoc'
     ),

@@ -1,7 +1,10 @@
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 
+from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import api_view
 # (GET - ListAPIView) Listar todos los elementos en la entidad:
 # (POST - CreateAPIView) Inserta elementos en la DB
 # (GET - RetrieveAPIView) Devuelve un solo elemento de la entidad.
@@ -18,17 +21,9 @@ from rest_framework.generics import (
     GenericAPIView,
     UpdateAPIView
 )
-from rest_framework.views import APIView
-# Importamos librerías para gestionar los permisos de acceso a nuestras APIs
-from rest_framework import status
-from rest_framework.authentication import (
-    BasicAuthentication, TokenAuthentication
-)
-from rest_framework.authtoken.models import Token
-from rest_framework.parsers import JSONParser
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.renderers import JSONRenderer
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
+from rest_framework.validators import ValidationError
 from rest_framework.views import APIView
 
 # NOTE: Importamos este decorador para poder customizar los 
@@ -39,7 +34,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from e_commerce.api.serializers import *
-from e_commerce.models import Comic, WishList
+from e_commerce.models import Comic
 
 
 mensaje_headder = '''
@@ -57,7 +52,47 @@ headers = {
 }
 ```
 '''
-# NOTE: APIs genéricas:
+
+@api_view(http_method_names=['GET'])
+def comic_list_api_view(request):
+    _queryset = Comic.objects.all()
+    _data = list(_queryset.values()) if _queryset.exists() else []
+    return Response(data=_data, status=status.HTTP_200_OK)
+
+
+@api_view(http_method_names=['GET'])
+def comic_retrieve_api_view(request):
+    instance = get_object_or_404(
+        Comic, id=request.query_params.get('id')
+    )
+    return Response(
+        data=model_to_dict(instance), status=status.HTTP_200_OK
+    )
+
+
+@api_view(http_method_names=['POST'])
+def comic_create_api_view(request):
+    _marvel_id = request.data.pop('marvel_id', None)
+    print(request.data)
+    if not _marvel_id:
+        raise ValidationError(
+            {"marvel_id": "Este campo no puede ser nulo."}
+        )
+    _instance, _created = Comic.objects.get_or_create(
+        marvel_id=_marvel_id,
+        defaults=request.data
+    )
+    if _created:
+        return Response(
+            data=model_to_dict(_instance), status=status.HTTP_201_CREATED
+        )
+    return Response(
+        data={
+            "marvel_id": "Ya existe un comic con ese valor, debe ser único."
+        },
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
 
 class GetComicAPIView(ListAPIView):
     __doc__ = f'''{mensaje_headder}
@@ -67,15 +102,12 @@ class GetComicAPIView(ListAPIView):
     '''
     queryset = Comic.objects.all()
     serializer_class = ComicSerializer
-
-    # Equivale a --> permission_classes = (IsAdminUser & IsAuthenticated,)
-    permission_classes = (IsAuthenticated | IsAdminUser,)
-    # Descomentar y mostrar en clases para ver las diferencias entre 
-    # estos tipos de Authentication. Mostrar en Postman.
-
-    # HTTP Basic Authentication
-    # authentication_classes = [BasicAuthentication]
-
+    permission_classes = (AllowAny,)
+    # permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAdminUser,)
+    # permission_classes = (IsAuthenticated | IsAdminUser,)
+    # permission_classes = (IsAuthenticated & IsAdminUser,)
+    # permission_classes = (IsAuthenticated, IsAdminUser)
     # Token Authentication
     # authentication_classes = [TokenAuthentication]
 
@@ -245,7 +277,6 @@ class LoginUserAPIView(APIView):
     Esquema de entrada:
     {"username":"root", "password":12345}
     
-    Utilizaremos JSONParser para tener  'Content-Type': 'application/json'\n\n
     Esta función sobrescribe la función post original de esta clase,
     recibe "request" y hay que setear format=None, para poder recibir 
     los datos en "request.data", la idea es obtener los datos enviados en el 
@@ -260,8 +291,6 @@ class LoginUserAPIView(APIView):
     }
     ```
     '''
-    parser_classes = (JSONParser,)
-    # renderer_classes = [JSONRenderer]
     authentication_classes = ()
     permission_classes = ()
 
@@ -345,9 +374,3 @@ class LoginUserAPIView(APIView):
             data=user_login_serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
-
-
-# TODO: Agregar las vistas genericas(vistas de API basadas en clases) 
-# que permitan realizar un CRUD del modelo de wish-list.
-# TODO: Crear una vista generica modificada(vistas de API basadas en clases)
-# para traer todos los comics que tiene un usuario.
