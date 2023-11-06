@@ -1,8 +1,15 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 
 # NOTE: Para poder utilizar el modelo "user" que viene por defecto en Django,
 # Debemos importarlo previamente:
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
+
+
+# NOTE: Conviene usar este forma para traer el modelo, ya que esta función
+# nos permite usar un modelo User definidos por nosotros, en caso de no
+# tenerlo, trae el de Django.
+User = get_user_model()
 
 
 # Create your models here.
@@ -38,26 +45,19 @@ class Comic(models.Model):
 
     def __str__(self):
         '''
-        La función __str__ cumple una función parecida a __repr__ en SQL Alchemy, 
-        es lo que retorna cuando llamamos al objeto.
+        El método __str__ cumple una función parecida al método __repr__
+        en SQL Alchemy, es lo que retorna cuando llamamos al objeto.
         '''
-        return f'{self.id}'
+        return f'{self.id} - {self.title}'
+
 
 class WishList(models.Model):
     id = models.BigAutoField(db_column='ID', primary_key=True)
     user = models.ForeignKey(
-        User,
-        verbose_name='user',
-        on_delete=models.CASCADE,
-        default=1,
-        blank=True
+        User, verbose_name='user', on_delete=models.CASCADE,
     )
     comic = models.ForeignKey(
-        Comic,
-        verbose_name='comic',
-        on_delete=models.CASCADE,
-        default=1,
-        blank=True
+        Comic, verbose_name='comic', on_delete=models.CASCADE,
     )
     favorite = models.BooleanField(verbose_name='favorite', default=False)
     cart = models.BooleanField(verbose_name='cart', default=False)
@@ -74,4 +74,4 @@ class WishList(models.Model):
         verbose_name_plural = 'wish lists'
 
     def __str__(self):
-        return f'{self.id}'
+        return f'{self.id}: {self.user.username} - {self.comic.title}'

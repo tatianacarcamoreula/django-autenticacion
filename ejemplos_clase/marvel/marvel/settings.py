@@ -43,16 +43,10 @@ BASE_APPS = [
 ]
 
 # Acá van las apps de 3ros que necesitamos agregar para que Django las encuentre.
-THIRD_APPS = [
-    'rest_framework',
-    'rest_framework.authtoken',
-    'drf_yasg',
-]
+THIRD_APPS = ['rest_framework', 'rest_framework.authtoken', 'drf_yasg']
 
 # Acá van las apps que creamos nosotros.
-LOCAL_APPS = [
-    'e_commerce',
-]
+LOCAL_APPS = ['e_commerce']
 
 INSTALLED_APPS = BASE_APPS + THIRD_APPS + LOCAL_APPS
 
@@ -70,19 +64,6 @@ INSTALLED_APPS = BASE_APPS + THIRD_APPS + LOCAL_APPS
 #     'rest_framework.authtoken',
 #     'drf_yasg',
 # ]
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
-}
-
 
 
 MIDDLEWARE = [
@@ -117,6 +98,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'marvel.wsgi.application'
 
+# NOTE: Configuración general para DRF.
+REST_FRAMEWORK = {
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'rest_framework.authentication.TokenAuthentication',
+
+    # ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+    ),
+}
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
