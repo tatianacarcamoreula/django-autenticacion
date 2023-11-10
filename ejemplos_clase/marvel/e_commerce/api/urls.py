@@ -25,4 +25,5 @@ urlpatterns = [
         RetrieveUpdateComicAPIView.as_view()
     ),
     path('comics/delete/<int:pk>/', DestroyComicAPIView.as_view()),
+    path('login/', LoginUserAPIView.as_view(), name="login"),
 ]
