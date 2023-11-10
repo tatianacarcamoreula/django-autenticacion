@@ -112,29 +112,34 @@ REST_FRAMEWORK = {
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-# NOTE: Reemplazamos la configuración inicial de base de datos para trabajar con Postgres:
-# Recordemos:
-    #   POSTGRES_DB: marvel_db
-    #   POSTGRES_USER: inove_user
-    #   POSTGRES_PASSWORD: 123Marvel!
+if os.getenv("DB_ENGINE") == "POSTGRES":
 
-DATABASES = {
-    'default': {
-        # 'ENGINE': 'django.db.backends.postgresql_psycopg2' --> En desuso.
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'marvel_db',        # POSTGRES_DB
-        'USER' : 'inove_user',      # POSTGRES_USER
-        'PASSWORD' : '123Marvel!',  # POSTGRES_PASSWORD
-        'HOST':'db',                # Nombre del servicio
-        'PORT': '5432'              # Número del puerto
+    # NOTE: Reemplazamos la configuración inicial de base de datos para trabajar con Postgres:
+    # Recordemos:
+        #   POSTGRES_DB: marvel_db
+        #   POSTGRES_USER: inove_user
+        #   POSTGRES_PASSWORD: 123Marvel!
+
+    DATABASES = {
+        'default': {
+            # 'ENGINE': 'django.db.backends.postgresql_psycopg2' --> En desuso.
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'marvel_db',        # POSTGRES_DB
+            'USER' : 'inove_user',      # POSTGRES_USER
+            'PASSWORD' : '123Marvel!',  # POSTGRES_PASSWORD
+            'HOST':'db',                # Nombre del servicio
+            'PORT': '5432'              # Número del puerto
+        }
     }
-}
+
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
