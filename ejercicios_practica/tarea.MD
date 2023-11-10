@@ -4,7 +4,7 @@ info@inove.com.ar\
 Web: [Inove](http://inove.com.ar)
 
 ---
-# Tarea: Django - REST FRAMEWORK 2
+# Tarea: Django - DRF - Autenticación y Permisos
 
 Al realizar esta tarea pondremos en práctica los conocimientos adquiridos en clase.
 Una vez finalizada, el alumno debe subir el enlace a su repositorio "forkeado" el foro de tarea correspondiente -NO SE ADMITE LA DEVOLUCIÓN POR OTRO CANAL SALVO SE ESPECIFIQUE LO CONTRARIO- 
@@ -13,19 +13,44 @@ Recuerde que no debe subir la base de datos al sistema, para ello se encuentra e
 
 ---
 
-### 1. Implemente el serializador necesario para el modelo WishList.
-Basado en el material visto en clase, incluido en la carpeta "ejemplos_clase" desarrolle el serializador necesario para el modelo WishList.
-Para poder incluir los campos relacionados --> Foreign Keys, un camino podría ser utilizar el método 'serializers.PrimaryKeyRelatedField' por ejemplo:
-    ```user = serializers.PrimaryKeyRelatedField(write_only=True,
-                                                   queryset=User.objects.all())```
-Luego el atributo debe ser incluido dentro de los 'fields', junto con el resto de los atributos del modelo.
 
-### 2. Realizar las vistas de API.
-Debe realizar todas las vistas de API necesarias para realizar el CRUD de la base de datos para la entidad "WishList". A continuación le dejamos los nombres de las vistas. Puede optar por ponerle otro nombre siempre y cuando sea representativo.
-  -  GetWishListAPIView (GET)
-  -  PostWishListAPIView (POST)
-  -  UpdateWishListAPIView (UPDATE)
-  -  DeleteWishListAPIView (DELETE)
+### 1. Utilizar el proyecto de "Marvel" visto en clase.
+Inicializar el contenedor de docker, compilar la imagen del repositorio con:
+**$** `docker-compose up` 
+
+
+### 2. Realizar las migraciones del sistema.
+Recuerde que para poder comenzar a utilizar el Django Admin, es necesario que el sistema se encuentre alineado con la base de datos. Para ello debemos realizar las migraciones de la aplicación y crear un nuevo superusuario.
+Los comandos necesarios se encuentran detallados en el archivo README.md
+
+
+### 3. Realice la class-based API view para el Login del usuario.
+Basado en el material visto en clase, incluido en la carpeta "ejemplos_clase" desarrolle una API view basada en clase para el login del usuario.
+La misma debe incluir la creación de un Token con su asignación al correspondiente usuario.
+Requisitos:
+  - Su correspondiente URL debe poseer el 'name' = 'login'.
+
+
+### 4. Cree los serializadores.
+Cree los serializadores tanto para el UserLogin como para el Token. 
+Debe crear un serializador llamado UserLoginSerializer y otro llamado TokenSerializer, ambos dentro del archivo serializers.py
+
+    UserLoginSerializer debe heredar de Serializer.
+    Debe poder serializar y/o deserializar los campos 'username' y 'password'.
+
+    TokenSerializer debe heredar de ModelSerializer.
+    Debe poder serializar y/o deserializar los campos 'user' y 'token'.
+
+
+### 5 Realizar las vistas de API (class-based) para el modelo WishList, con permisos determinados.
+Debe realizar las siguientes vistas de API (class-based) necesarias para realizar el CRUD de la base de datos para la entidad "WishList". A dichas views, deberá asignarle los permisos aclarados a continuación, con las urls detalladas.
+  -  GetWishListAPIView (GET) / endpoint: 'wishlist/<int:pk>/' / name: 'get_wishlist_api_view' / Permisos: IsAuthenticated - Autenticación: TokenAuthentication.
+  -  PostWishListAPIView (POST) / endpoint: 'wishlist/create/' / name: 'post_wishlist_api_view' / Permisos: IsAuthenticated & IsAdminUser.
+  -  UpdateWishListAPIView (UPDATE) / endpoint: 'wishlist/update/<int:pk>/' / name: 'update_wishlist_api_view' / Permisos: IsAuthenticated | IsAdminUser.
+  -  DeleteWishListAPIView (DELETE) / endpoint: 'wishlist/delete/<int:pk>/' / name: 'delete_wishlist_api_view' / Permisos: IsAdminUser.
+
+Recuerde utilizar el serializador creado la clase anterior.
+
  - **NOTA 1**: Tener en cuenta que para la actualización (*PUT/UPDATE*) se pide únicamente que permita actualizar los siguientes campos del modelo de forma **opcional o parcial** (esto significa que si uno de los campos no es enviado en el body de la request, el response no retorne o devuelva un error de validación indicando que falta determinado parámetro o campo):
    - **favorite**
    - **cart**
@@ -44,85 +69,26 @@ Debe realizar todas las vistas de API necesarias para realizar el CRUD de la bas
   - Para solucionar este inconveniente, un camino podría ser que nos actualice sólo el comic (cuyo id pasamos por parámetro estático) del usuario que está authenticado. Para esto debemos sobreescribir además el método `.get_queryset()` y filtrar por el usuario en cuestión. Ahora bien, ¿cómo sabemos qué usuario está authenticado?, ¿se puede obtener la instancia del usuario authenticado? La respuesta es SI, y, DRF nos resuelve este problema. ¿Cómo? mediante la clase u objeto `request`. Entonces para obtener la instancia podemos hacer lo siguiente: `request.user` o `self.request.user`. Entonces dentro de nuestro método vamos a filtrar por user haciendo:
   ```queryset.filter(user=self.request.user)```. Una vez hecho esto simplemente el método `.get_object()` se va a encargar de buscar el comic que coincida con el id pasado por parámetro de ese usuario.
 
-Debe proporcionar protección de acceso a estas vistas de API, la que debe ser accesible **solo** si el usuario está autenticado. En el caso del listado (método GET) agregar además de estar autenticado debe ser administrador.
 
-### 3. Asignar las URLs para las vistas de API.
-Asigne las URLs para poder acceder a estas vistas, utilize los siguientes endpoints:
-```
-- `path('wish/get', GetWishListAPIView.as_view())`
-- `path('wish/post', PostWishListAPIView.as_view())`
-- `path('wish/{comic_id}/', UpdateWishListAPIView.as_view())`
-- `path('wish/{comic_id}/', DeleteWishListAPIView.as_view())`
-```
-
-### 4. Realizar una API "mixta".
-Realice una API mixta para consultar los comics favoritos de un usuario particular.
-Para ello recomendamos sobrescribir el método `.get_queryset()` y realizar allí todas las consultas lógicas.
-Utilice el siguiente endpoint y el siguiente nombre para la view:
-    
- ``` 
- path('favs/<username>/get', GetUserFavsAPIView.as_view()), 
- ```
-
-La lógica a seguir podría ser:
-* Obtener el parametro 'username' del request
-* Consultar al modelo 'User' si existe dicho usuario y obtener el objeto del modelo.
-    * ``` user = User.objects.filter(username=username) ```
-* Con dicho objeto, consultar en el modelo "WishList" por los comics que este usuario posee en favoritos. La consulta puede ser similar a:
-    * ``` wish_list = WishList.objects.filter(user=user.first(), favorite=True) ```
-* Ahora dispondrá de un queryset con los objetos del modelo "WishList" de dicho usuario que están en favoritos.
-* El paso siguiente es obtener un queryset con los comics, podemos optar por 2 de los posibles caminos:
-    1) Iterando cada objeto que hay dentro de **wish_list** e ir accediendo al *id* del comic. Por ejemplo:
-           * ```comic_obj = Comic.objects.get(id=wish.comic_id)```
-        (Notese que llamamos "wish" al objeto que está iterando ya que es solo un elemento de la lista "wish_list".) 
-
-        * El paso siguiente es armar la lista de diccionarios de retorno en la view, como por ejemplo:
-            ``` 
-            
-            [{
-                    'id': 1
-                    'marvel_id': '',
-                    'title': '',
-                    'description': '',
-                    'price': 1.00,
-                    'stock_qty': '',
-                    'picture': '',
-                },
-                {
-                    'id': 2
-                    'marvel_id': '',
-                    'title': '',
-                    'description': '',
-                    'price': 1.00,
-                    'stock_qty': '',
-                    'picture': '',
-                },
-                ...] 
-            ```
-    2) Hacer uso del serializador `ComicSerializer` para manejar la data que vamos a retornar sin necesidad de armar nosotros mismos la lista (camino recomendado).
-        * Para eso necesitamos profundizar un poco más en el ORM de Django. La idea es realizar un queryset sobre el modelo *Comic* pero sin hacer uso de un bloque iterativo. A continuación se deja los links de las herramientas que provee para poder aplicarlas en este caso:
-          *  [in](https://docs.djangoproject.com/en/3.2/ref/models/querysets/#in)
-          *  [Subquery](https://docs.djangoproject.com/en/3.2/ref/models/expressions/#limiting-a-subquery-to-a-single-column)
-          *  [values](https://docs.djangoproject.com/en/3.2/ref/models/querysets/#values) ó [values_list](https://docs.djangoproject.com/en/3.2/ref/models/querysets/#values-list)
-        * Queda en usted investigar y ver como asociarlos para poder obtener lo esperado. Ante cualquier duda se puede realizar las consultas necesarias.
-
-* La API también debe solicitar **autenticación** para su uso.
-
-* **NOTA**: No es la única manera de encarar esta lógica para dicha View, existen varias maneras mucho más eficientes y óptimas, pero consideramos que es un 1er paso para acercarse e ir entendiendo como funciona el ORM de Django. Si usted considera otra manera de encarar el ejercicio, puede utilizarlo siempre y cuando cumpla con lo especificado. En la clase siguiente veremos un poco más esto y como poder mejorar dicha lógica.
-
-* **Preguntas y conclusiones que deberíamos plantearnos luego de realizar el punto anterior:**
-  - ¿Qué sucede si un usuario tiene cientos de comics en favoritos?.
-  - El scroll que debemos hacer para ir viendo cada uno de ellos ¿se vuelve bastante incómodo?.
-  - ¿Es una mala **experiencia para el usuario**?.
-  - ¿Cómo podríamos solucionar lo anterior?.
-  - Una solución, ¿podría ser agregar **paginado** a la API?. ¿Favorece la experiencia de usuario? Habrán notado que hoy en día mucha de las aplicaciones trabajan con esto.
-  - Y si quisiéramos buscar dentro de todos esos resultados algún comic en particular, ¿sería un agregado favorable?. Piensen que hoy en día estando dentro de una aplicación las búsquedas de algo particular dentro de muchos resultados nos ahorra tiempo.
-  - **¿Cómo podríamos implementar todo lo anterior?. ¿Dónde agregaríamos esa lógica?**.
-
-**IMPORTANTE**: Al descargar la colección y el Ambiente de Trabajo (Environment) que se encuentran en el Campus e importarla dentro de Postam van a poder probar sus APIs.
-
-### 5. Instale Swagger para poder ver la documentación general de las APIs. 
+### 6. Instale Swagger para poder ver la documentación general de las APIs. 
 Basandose en la documentación de clase y el ejemplo brindado en "ejemplo_clase" instale Swagger para poder ver la documentación de sus APIs.
+
+
+## ¡Hora de evaluar nuestro código!
+Puede evaluar que ha alcanzo los solicitado en el desafio ejecutando los tests que vienen dentro la carpeta ejercicios_practica dónde ha estando incoporando su código. Para eso debe realizar los siguientos:
+
+1 - Abrir una consola dentro de la carpeta ejercicios_practica
+
+2 - Lanzar el docker de ejercicios_practica (si es que está usando docker):\
+**$** `docker-compose up`
+
+3 - Abrir una nueva consola dentro de la carpeta ejercicios_practica
+
+4 - Ingresar su consola dentro del contenedor con el siguiente comando (si es que está usando docker):\
+**$** `docker exec -it modulo_4c_tp bash`
+
+5 - Lance los tests con el siguiente comando:\
+**$** `pytest -s`
 
 ---
 
