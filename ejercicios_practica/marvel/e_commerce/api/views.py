@@ -1,7 +1,9 @@
+from django.contrib.auth import authenticate
 from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import api_view
 # (GET - ListAPIView) Listar todos los elementos en la entidad:
 # (POST - CreateAPIView) Inserta elementos en la DB
@@ -19,12 +21,16 @@ from rest_framework.generics import (
     GenericAPIView,
     UpdateAPIView
 )
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.validators import ValidationError
 from rest_framework.views import APIView
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 from e_commerce.api.serializers import *
-from e_commerce.models import Comic
+from e_commerce.models import Comic, WishList
 
 
 @api_view(http_method_names=['GET'])
@@ -225,3 +231,83 @@ class GetOneMarvelComicAPIView(RetrieveAPIView):
 #         return Response(
 #             data=serializer.data, status=status.HTTP_200_OK
 #         )
+
+class LoginUserAPIView(APIView):
+    '''
+    Vista de API personalizada para recibir peticiones de tipo POST.
+    Esquema de entrada:
+    {"username":"root", "password":12345}
+    '''
+    authentication_classes = ()
+    permission_classes = ()
+    def post(self, request):
+        # Realizamos validaciones a través del serializador
+        user_login_serializer = UserLoginSerializer(data=request.data)
+        if user_login_serializer.is_valid():
+            _username = request.data.get('username')
+            _password = request.data.get('password')
+
+            # Si el usuario existe y sus credenciales son validas,
+            # tratamos de obtener el TOKEN:
+            _account = authenticate(username=_username, password=_password)
+            if _account:
+                _token, _created = Token.objects.get_or_create(user=_account)
+                return Response(
+                    data=TokenSerializer(instance=_token, many=False).data,
+                    status=status.HTTP_200_OK
+                )
+            return Response(
+                data={'error': 'Invalid Credentials.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(
+            data=user_login_serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+#Metodo [GET]
+class GetWishListAPIView(ListAPIView):
+    '''
+    METODO [GET] 
+    Devuelve los comics que estan en wishlist
+    '''
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    lookup_field = 'pk'
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = [TokenAuthentication]
+    
+#Metodo[POST]
+class PostWishListAPIView(CreateAPIView):
+    '''
+    METODO[POST]
+    Crear una nueva lista de deseos
+    '''
+    serializer_class = WishListSerializer
+    queryset = WishList.objects.all()
+    permission_classes = (IsAuthenticated & IsAdminUser,)
+    
+#Metodod[UPDATE]   
+class UpdateWishListAPIView(UpdateAPIView):
+    '''
+    METODO[UPDATE]
+    Actualización de la lista de deseos, accediendo por el id del comic
+    '''
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    authentication_classes = []
+    permission_classes = [IsAuthenticated|IsAdminUser]    
+    
+#Metodo[DELETE]
+class DeleteWishListAPIView(DestroyAPIView):
+    '''
+    METODO[DELETE]
+    Eliminacion de lista de deseos, accediendo por el id del comic
+    '''
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    permission_classes = (IsAdminUser,)
+    
+    # def get_queryset(self):s
+    #     return self.queryset.filter(user=self.request.user)
+    

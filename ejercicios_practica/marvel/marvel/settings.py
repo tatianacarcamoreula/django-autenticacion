@@ -43,7 +43,7 @@ BASE_APPS = [
 ]
 
 # Acá van las apps de 3ros que necesitamos agregar para que Django las encuentre.
-THIRD_APPS = ['rest_framework']
+THIRD_APPS = ['rest_framework', 'rest_framework.authtoken', 'drf_yasg']
 
 # Acá van las apps que creamos nosotros.
 LOCAL_APPS = ['e_commerce']
@@ -66,10 +66,14 @@ INSTALLED_APPS = BASE_APPS + THIRD_APPS + LOCAL_APPS
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
+        # 'rest_framework.permissions.IsAdminUser',
+        # 'rest_framework.permissions.IsAuthenticated',
     ),
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'rest_framework.authentication.TokenAuthentication',
+    #     'rest_framework.authentication.BasicAuthentication',
+    # ),
 }
-
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -191,3 +195,39 @@ VERDE = "\033[;32m"
 
 # NOTE: Para manejo de sesión.
 LOGIN_URL = '/admin/login'
+
+# API DOCS Settings:
+# https://drf-yasg.readthedocs.io/en/stable/settings.html
+LOGOUT_URL = '/admin/logout'
+
+# Acá van todas las configuraciones para la UI de Swagger.
+SWAGGER_SETTINGS = {
+    'DEFAULT_MODEL_RENDERING': "example",
+    # Seteo los tipos de Authenticaciones que puedo utilizar en
+    # Swagger.
+    # https://drf-yasg.readthedocs.io/en/stable/settings.html#security-definitions-settings
+    'SECURITY_DEFINITIONS': {
+        # HTTP Basic Authentication:
+        'basic': {
+            'description': "Basic Auth",
+            'type': 'basic',
+            'in': 'header'
+        },
+        # Token Authentication:
+        'DRF Token': {
+            'description': '**Ejemplo: Token ea0dfcbbdff1a55ae26a67cd71bcc6adffb1f200**',
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+         }
+    },
+    "USE_SESSION_AUTH": True,
+    'LOGIN_URL': LOGIN_URL,
+    'LOGOUT_URL': LOGOUT_URL
+}
+
+# Acá van todas las configuraciones para la UI de Redoc.
+REDOC_SETTINGS = {
+   'LAZY_RENDERING': False,
+}
+
